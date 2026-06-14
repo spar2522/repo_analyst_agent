@@ -1,0 +1,13 @@
+[project]
+name = "repo-analyst-agent"
+version = "0.1.0"
+description = "Agent for analysing repositories and providing insights."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
