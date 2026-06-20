@@ -8,8 +8,12 @@ class AgentState:
     question: str
     """The question or task the agent is currently addressing."""
 
+    repo_path: str
+
     files_seen: set[str] = field(default_factory=set)
     """Set of files that the agent has encountered in the repository."""
+
+    search_results: set[str] = field(default_factory=set)
 
     files_read: set[str] = field(default_factory=set)
     """Set of files that the agent has read or processed."""

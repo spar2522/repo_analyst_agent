@@ -1,5 +1,6 @@
 from repo_analyst.agent.agent import Agent
 from repo_analyst.agent.agent_state import AgentState
+from repo_analyst.planner.hardcoded_planner import HardcodedPlanner
 from repo_analyst.tool_call import ToolCall
 
 REPO_PATH = "/Users/arpitratan/ai-lab/ai_autodoc"
@@ -63,9 +64,27 @@ def test_run_step():
     print(state)
 
 
+def test_agent_run():
+    state = AgentState(
+        question="What files exist?",
+        repo_path="/Users/arpitratan/ai-lab/ai_autodoc",
+    )
+
+    planner = HardcodedPlanner()
+
+    agent = Agent(
+        state=state,
+        planner=planner,
+    )
+
+    agent.run()
+
+    print(state)
+
+
 if __name__ == "__main__":
 
-    TEST_TO_RUN = "run_step"
+    TEST_TO_RUN = "test_agent_run"
 
     if TEST_TO_RUN == "list_files":
         test_list_files()
@@ -75,6 +94,9 @@ if __name__ == "__main__":
 
     elif TEST_TO_RUN == "run_step":
         test_run_step()
+
+    elif TEST_TO_RUN == "test_agent_run":
+        test_agent_run()
 
     else:
         raise ValueError(f"Unknown test: {TEST_TO_RUN}")
