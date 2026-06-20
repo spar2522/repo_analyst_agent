@@ -79,8 +79,6 @@ def test_agent_run():
 
     agent.run()
 
-    print(state)
-
 
 if __name__ == "__main__":
 

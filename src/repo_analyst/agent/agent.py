@@ -63,9 +63,16 @@ class Agent:
         tool_call: ToolCall,
     ) -> ToolResult:
 
+        print()
+        print("=" * 80)
+        print(f"Executing Tool: {tool_call.tool_name}")
+        print(f"Arguments: {tool_call.args}")
+        print("=" * 80)
         tool_result = self.execute_tool(tool_call)
+        print("Tool Completed")
 
         self.apply_tool_result(tool_result)
+        self.state.print_state()
 
         return tool_result
 
