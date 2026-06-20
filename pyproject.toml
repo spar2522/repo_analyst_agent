@@ -5,24 +5,14 @@ description = "Agent for analysing repositories and providing insights."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = []
-optional-dependencies = {
-    "dev" = ["pytest", "typing"],
-}
+
+[project.optional-dependencies]
+dev = ["pytest", "typing"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-include = ["src/*"]
-exclude = ["src/*.tests", "src/*.test"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["*"]
 exclude = ["*tests", "*test"]
-
-[tool.black]
-line-length = 88
-target-version = ["py314"]
-
-[tool.pydocstyle]
-convention = "google"
-ignore-strings = ["__version__", "__all__"]
