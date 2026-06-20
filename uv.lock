@@ -1,8 +1,109 @@
-version = 1
-revision = 3
-requires-python = ">=3.14"
+The provided PyPI metadata file appears **structurally valid** for a custom or tool-specific format, but it **does not conform to the standard PyPI metadata format** used by `setup.py` or `setup.cfg`. Here's a breakdown of the key issues and how to fix them:
 
-[[package]]
-name = "repo-analyst-agent"
-version = "0.1.0"
-source = { virtual = "." }
+---
+
+### 🔍 **Issues Identified**
+
+1. **Non-Standard Sections**:
+   - The use of `[package.optional-dependencies]` and `[package.metadata]` is **not part of the standard PyPI metadata format**.
+   - Standard PyPI metadata uses sections like `[metadata]`, `[options]`, and `[options.extras_require]`.
+
+2. **Missing Standard Sections**:
+   - The file lacks standard metadata sections such as `[metadata]`, which typically includes `name`, `version`, `author`, `description`, etc.
+
+3. **Optional Dependencies Placement**:
+   - The optional dependencies (`dev`) are listed under `[package.optional-dependencies]`, but in standard practice, they should be under `[options.extras_require]`.
+
+---
+
+### ✅ **Corrected Version (Standard PyPI Metadata Format)**
+
+Here’s how the file should look if you're using `setup.py` or `setup.cfg`:
+
+```ini
+[metadata]
+name = repo-analyst-agent
+version = 0.1.0
+author = Your Name
+description = A package for repository analysis.
+long_description = file: README.md
+long_description_content_type = text/markdown
+url = https://github.com/yourusername/repo-analyst-agent
+project_urls =
+    Bug Tracker = https://github.com/yourusername/repo-analyst-agent/issues
+classifiers =
+    Programming Language :: Python :: 3
+    License :: OSI Approved :: MIT License
+    Operating System :: OS Independent
+
+[options]
+packages = find:
+install_requires =
+    pytest>=9.1.0
+
+[options.extras_require]
+dev =
+    pytest>=9.1.0
+    typing>=3.10.0.0
+```
+
+---
+
+### 🛠️ **Explanation of Changes**
+
+- **`[metadata]`**: Contains core metadata like `name`, `version`, and `description`.
+- **`[options]`**: Specifies installation requirements (`install_requires`).
+- **`[options.extras_require]`**: Defines optional dependencies (e.g., `dev` extras).
+- **Removed Non-Standard Sections**: Replaced `[package.optional-dependencies]` and `[package.metadata]` with standard sections.
+
+---
+
+### 📌 **Additional Notes**
+
+- If you're using a **custom tool** or **metadata format**, ensure it aligns with the tool's documentation.
+- The `typing` package is not a standard dependency for Python 3.10+ (it's included in the standard library), so it may be redundant unless you're targeting older versions.
+
+---
+
+### 📦 **Example `setup.py`**
+
+If you're using `setup.py`, your file should look like this:
+
+```python
+from setuptools import setup
+
+setup(
+    name="repo-analyst-agent",
+    version="0.1.0",
+    author="Your Name",
+    description="A package for repository analysis.",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    url="https://github.com/yourusername/repo-analyst-agent",
+    packages=["repo_analyst_agent"],
+    install_requires=[
+        "pytest>=9.1.0",
+    ],
+    extras_require={
+        "dev": [
+            "pytest>=9.1.0",
+            "typing>=3.10.0.0",
+        ],
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+)
+```
+
+---
+
+### ✅ **Summary**
+
+- Use **standard PyPI metadata sections** (`[metadata]`, `[options]`, `[options.extras_require]`).
+- Place **optional dependencies** under `[options.extras_require]`.
+- Avoid **non-standard sections** unless explicitly required by a specific tool.
+
+Let me know if you're using a specific tool or format (e.g., `pyproject.toml`, `poetry`, etc.), and I can tailor the solution further.
