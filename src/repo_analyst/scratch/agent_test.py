@@ -61,11 +61,9 @@ def test_agent_run():
     """Test the full agent run with a hardcoded planner for deterministic execution."""
     state = AgentState(
         question="How does Redis work?",
-        repo_path="/Users/arpitratan/ai-lab/ai_autodoc",
+        repo_path=REPO_PATH,
     )
-    planner = (
-        HardcodedPlanner()
-    )  # Using hardcoded planner for deterministic test execution
+    planner = HardcodedPlanner()  # Using hardcoded planner for deterministic test execution
     agent = Agent(
         state=state,
         planner=planner,
