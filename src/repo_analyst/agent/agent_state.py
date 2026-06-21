@@ -12,13 +12,13 @@ class AgentState:
     """Path to the repository being analyzed."""
 
     files_seen: set[str] = field(default_factory=set)
-    """Set of files that the agent has encountered in the repository."""
+    """Set of files that the agent has encountered in the repository during traversal."""
 
     search_results: set[str] = field(default_factory=set)
-    """Set of files or content that the agent has found via search."""
+    """Set of files or content that the agent has found via search operations."""
 
     files_read: set[str] = field(default_factory=set)
-    """Set of files that the agent has read or processed."""
+    """Set of files that the agent has read or processed in detail."""
 
     observations: list[str] = field(default_factory=list)
     """List of observations or notes made by the agent during analysis."""
@@ -27,9 +27,13 @@ class AgentState:
     """List of findings or insights made by the agent during analysis."""
 
     search_completed: bool = False
+    """Flag indicating whether the search phase has been completed."""
 
     def summary(self):
-        """Returns a summary of the agent's state with counts of key elements."""
+        """Returns a summary of the agent's state with counts of key elements.
+
+        This is useful for logging progress or monitoring the agent's status during analysis.
+        """
         return {
             "files_seen": len(self.files_seen),
             "files_read": len(self.files_read),
@@ -43,5 +47,6 @@ class AgentState:
         return (
             f"AgentState(question='{self.question}', repo_path='{self.repo_path}', "
             f"files_seen={len(self.files_seen)}, files_read={len(self.files_read)}, "
-            f"search_results={len(self.search_results)}, observations={len(self.observations)}, findings={len(self.findings)})"
+            f"search_results={len(self.search_results)}, observations={len(self.observations)}, "
+            f"findings={len(self.findings)})"
         )
