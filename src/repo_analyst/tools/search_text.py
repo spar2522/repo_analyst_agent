@@ -21,6 +21,10 @@ def search_text(
 
     Returns:
         list[str]: List of file paths containing the search term.
+
+    Examples:
+        >>> search_text('/path/to/repo', 'function')
+        ['/path/to/repo/file1.py', '/path/to/repo/file2.py']
     """
     matches = []
 
