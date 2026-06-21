@@ -1,4 +1,4 @@
-from dataclass import dataclass, field
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -23,6 +23,11 @@ class AgentState:
     observations: list[str] = field(default_factory=list)
     """List of observations or notes made by the agent during analysis."""
 
+    findings: list[str] = field(default_factory=list)
+    """List of findings or insights made by the agent during analysis."""
+
+    search_completed: bool = False
+
     def summary(self):
         """Returns a summary of the agent's state with counts of key elements."""
         return {
@@ -30,11 +35,13 @@ class AgentState:
             "files_read": len(self.files_read),
             "search_results": len(self.search_results),
             "observations": len(self.observations),
+            "findings": len(self.findings),
+            "search_completed": self.search_completed,
         }
 
     def __repr__(self):
         return (
             f"AgentState(question='{self.question}', repo_path='{self.repo_path}', "
             f"files_seen={len(self.files_seen)}, files_read={len(self.files_read)}, "
-            f"search_results={len(self.search_results)}, observations={len(self.observations)})"
+            f"search_results={len(self.search_results)}, observations={len(self.observations)}, findings={len(self.findings)})"
         )

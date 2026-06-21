@@ -33,10 +33,7 @@ def search_text(
                 file_path,
             )
 
-            if (
-                search_term.lower()
-                in content.lower()
-            ):
+            if search_term.lower() in content.lower():
 
                 matches.append(file_path)
 

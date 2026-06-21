@@ -55,6 +55,8 @@ class Agent:
     def _handle_search_text(self, tool_result: ToolResult):
         """Handle the result of a search_text tool execution."""
         self.state.search_results.update(tool_result.result)
+        self.state.search_completed = True
+
         self.state.observations.append(
             f"Found {len(tool_result.result)} matching files"
         )
@@ -74,7 +76,7 @@ class Agent:
         self.logger.info("=" * 60)
         self.logger.info(f"Executing Tool: {tool_call.tool_name}")
         self.logger.info("=" * 60)
-        self.logger.debug(f"Arguments: {tool_call.args}")
+        self.logger.info(f"Arguments: {tool_call.args}")
         tool_result = self.execute_tool(tool_call)
         self.logger.info("Tool execution completed")
 
