@@ -83,32 +83,19 @@ class Agent:
 
         return tool_result
 
-    def run(self):
-        """Run the agent until the planner indicates completion."""
-        self.logger.info("Agent started")
-        while True:
-            tool_call = self.planner.next_tool_call(self.state)
-            if tool_call is None:
-                self.logger.info("Agent workflow completed.")
-                break
-            self.run_step(tool_call)
-
     def log_state(self):
-
-        summary = self.state.summary()
-
-        self.logger.info("")
-        self.logger.info("STATE")
-        self.logger.info("-" * 40)
-
-        for key, value in summary.items():
-
-            self.logger.info(f"{key}: {value}")
-
-        self.logger.info("")
-
+        """Log the current agent state and recent observations."""
+        state_summary = self.state.summary()
+        self.logger.info("Agent State Summary:")
+        self.logger.info(state_summary)
         self.logger.info("Recent Observations:")
+        for obs in self.state.observations[-5:]:
+            self.logger.info(f"- {obs}")
 
-        for observation in self.state.observations[-5:]:
-
-            self.logger.info(f"  - {observation}")
+    def run(self):
+        """Run the agent until the planner signals completion."""
+        while True:
+            next_action = self.planner.next_action(self.state)
+            if next_action is None:
+                break
+            self.run_step(next_action)
