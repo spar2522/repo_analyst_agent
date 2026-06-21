@@ -7,11 +7,8 @@ REPO_PATH = "/Users/arpitratan/ai-lab/ai_autodoc"
 
 
 def test_list_files():
-
     state = AgentState(question="What files exist?")
-
     agent = Agent(state)
-
     result = agent.execute_tool(
         ToolCall(
             tool_name="list_files",
@@ -20,16 +17,12 @@ def test_list_files():
             },
         )
     )
-
     print(result)
 
 
 def test_search_text():
-
     state = AgentState(question="How does Redis work?")
-
     agent = Agent(state)
-
     result = agent.execute_tool(
         ToolCall(
             tool_name="search_text",
@@ -39,16 +32,12 @@ def test_search_text():
             },
         )
     )
-
     print(result)
 
 
 def test_run_step():
-
     state = AgentState(question="What files exist?")
-
     agent = Agent(state)
-
     result = agent.run_step(
         ToolCall(
             tool_name="list_files",
@@ -57,7 +46,6 @@ def test_run_step():
             },
         )
     )
-
     print(result)
     print()
     print("STATE")
@@ -69,32 +57,24 @@ def test_agent_run():
         question="What files exist?",
         repo_path="/Users/arpitratan/ai-lab/ai_autodoc",
     )
-
-    planner = HardcodedPlanner()
-
+    planner = HardcodedPlanner()  # Using hardcoded planner for deterministic test execution
     agent = Agent(
         state=state,
         planner=planner,
     )
-
     agent.run()
 
 
 if __name__ == "__main__":
+    TEST_NAME = "test_agent_run"
+    test_functions = {
+        "list_files": test_list_files,
+        "search_text": test_search_text,
+        "run_step": test_run_step,
+        "test_agent_run": test_agent_run,
+    }
 
-    TEST_TO_RUN = "test_agent_run"
-
-    if TEST_TO_RUN == "list_files":
-        test_list_files()
-
-    elif TEST_TO_RUN == "search_text":
-        test_search_text()
-
-    elif TEST_TO_RUN == "run_step":
-        test_run_step()
-
-    elif TEST_TO_RUN == "test_agent_run":
-        test_agent_run()
-
+    if TEST_NAME in test_functions:
+        test_functions[TEST_NAME]()
     else:
-        raise ValueError(f"Unknown test: {TEST_TO_RUN}")
+        raise ValueError(f"Unknown test: {TEST_NAME}")
