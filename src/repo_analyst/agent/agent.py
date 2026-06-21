@@ -1,4 +1,5 @@
 from repo_analyst.agent.agent_state import AgentState
+from repo_analyst.agent.summarizers.file_summarizer import summarize_file
 from repo_analyst.planner.planner import Planner
 from repo_analyst.tool_call import ToolCall
 from repo_analyst.tools.tools_registry import TOOLS
@@ -65,6 +66,12 @@ class Agent:
         """Handle the result of a read_file tool execution."""
         file_path = tool_result.tool_call.args["file_path"]
         self.state.files_read.add(file_path)
+        summary = summarize_file(
+            file_path=file_path,
+            content=tool_result.result,
+        )
+
+        self.state.findings.append(summary)
         self.state.observations.append(f"Read {file_path}")
 
     def run_step(
@@ -112,5 +119,13 @@ class Agent:
         self.logger.info("Recent Observations:")
 
         for observation in self.state.observations[-5:]:
+
+            self.logger.info(f"  - {observation}")
+
+        self.logger.info("")
+
+        self.logger.info("Recent Findings:")
+
+        for observation in self.state.findings:
 
             self.logger.info(f"  - {observation}")
