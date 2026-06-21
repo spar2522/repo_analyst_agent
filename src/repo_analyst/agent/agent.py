@@ -1,13 +1,12 @@
-from repo_analyst import tool_call
 from repo_analyst.agent.agent_state import AgentState
 from repo_analyst.planner.planner import Planner
 from repo_analyst.tool_call import ToolCall
 from repo_analyst.tools.tools_registry import TOOLS
 from repo_analyst.tool_result import ToolResult
+import logging
 
 
 class Agent:
-
     def __init__(
         self,
         state: AgentState,
@@ -15,16 +14,22 @@ class Agent:
     ):
         self.state = state
         self.planner = planner
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+
+        self.handlers = {
+            "list_files": self._handle_list_files,
+            "search_text": self._handle_search_text,
+            "read_file": self._handle_read_file,
+        }
 
     def execute_tool(
         self,
         tool_call: ToolCall,
     ) -> ToolResult:
-
+        """Execute the specified tool and return the result."""
         tool = TOOLS[tool_call.tool_name]
-
         result = tool(**tool_call.args)
-
         return ToolResult(
             tool_name=tool_call.tool_name,
             result=result,
@@ -35,41 +40,42 @@ class Agent:
         self,
         tool_result: ToolResult,
     ):
+        """Apply the result of a tool execution to the agent state."""
+        handler = self.handlers.get(tool_result.tool_name)
+        if handler:
+            handler(tool_result)
+        else:
+            self.logger.warning(f"No handler found for tool: {tool_result.tool_name}")
 
-        if tool_result.tool_name == "list_files":
+    def _handle_list_files(self, tool_result: ToolResult):
+        """Handle the result of a list_files tool execution."""
+        self.state.files_seen.update(tool_result.result)
+        self.state.observations.append(
+            f"Discovered {len(tool_result.result)} files"
+        )
 
-            self.state.files_seen.update(tool_result.result)
+    def _handle_search_text(self, tool_result: ToolResult):
+        """Handle the result of a search_text tool execution."""
+        self.state.search_results.update(tool_result.result)
+        self.state.observations.append(
+            f"Found {len(tool_result.result)} matching files"
+        )
 
-            self.state.observations.append(
-                f"Discovered {len(tool_result.result)} files"
-            )
-        elif tool_result.tool_name == "search_text":
-            self.state.search_results.update(tool_result.result)
-
-            self.state.observations.append(
-                f"Found {len(tool_result.result)} matching files"
-            )
-
-        elif tool_result.tool_name == "read_file":
-
-            file_path = tool_result.tool_call.args["file_path"]
-
-            self.state.files_read.add(file_path)
-
-            self.state.observations.append(f"Read {file_path}")
+    def _handle_read_file(self, tool_result: ToolResult):
+        """Handle the result of a read_file tool execution."""
+        file_path = tool_result.tool_call.args["file_path"]
+        self.state.files_read.add(file_path)
+        self.state.observations.append(f"Read {file_path}")
 
     def run_step(
         self,
         tool_call: ToolCall,
     ) -> ToolResult:
-
-        print()
-        print("=" * 80)
-        print(f"Executing Tool: {tool_call.tool_name}")
-        print(f"Arguments: {tool_call.args}")
-        print("=" * 80)
+        """Execute a single step of the agent's workflow."""
+        self.logger.info(f"Executing Tool: {tool_call.tool_name}")
+        self.logger.debug(f"Arguments: {tool_call.args}")
         tool_result = self.execute_tool(tool_call)
-        print("Tool Completed")
+        self.logger.info("Tool Completed")
 
         self.apply_tool_result(tool_result)
         self.state.print_state()
@@ -77,12 +83,10 @@ class Agent:
         return tool_result
 
     def run(self):
-
+        """Run the agent until the planner indicates completion."""
         while True:
-
             tool_call = self.planner.next_tool_call(self.state)
-
             if tool_call is None:
+                self.logger.info("Agent workflow completed.")
                 break
-
             self.run_step(tool_call)
