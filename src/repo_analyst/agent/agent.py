@@ -12,11 +12,13 @@ class Agent:
         state: AgentState,
         planner: Planner,
     ):
+        """Initialize the Agent with the given state and planner."""
         self.state = state
         self.planner = planner
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
+        # Map tool names to their corresponding result handlers
         self.handlers = {
             "list_files": self._handle_list_files,
             "search_text": self._handle_search_text,
@@ -55,7 +57,7 @@ class Agent:
     def _handle_search_text(self, tool_result: ToolResult):
         """Handle the result of a search_text tool execution."""
         self.state.search_results.update(tool_result.result)
-        self.state.search_completed = True
+        self.state.search_completed = True  # Signal that search phase is complete
 
         self.state.observations.append(
             f"Found {len(tool_result.result)} matching files"
@@ -96,7 +98,7 @@ class Agent:
             self.run_step(tool_call)
 
     def log_state(self):
-
+        """Log the current state of the agent."""
         summary = self.state.summary()
 
         self.logger.info("")
@@ -104,7 +106,6 @@ class Agent:
         self.logger.info("-" * 40)
 
         for key, value in summary.items():
-
             self.logger.info(f"{key}: {value}")
 
         self.logger.info("")
@@ -112,5 +113,4 @@ class Agent:
         self.logger.info("Recent Observations:")
 
         for observation in self.state.observations[-5:]:
-
             self.logger.info(f"  - {observation}")
