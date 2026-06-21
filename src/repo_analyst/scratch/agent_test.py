@@ -2,8 +2,11 @@ from repo_analyst.agent.agent import Agent
 from repo_analyst.agent.agent_state import AgentState
 from repo_analyst.planner.hardcoded_planner import HardcodedPlanner
 from repo_analyst.tool_call import ToolCall
+import logging
 
 REPO_PATH = "/Users/arpitratan/ai-lab/ai_autodoc"
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
 def test_list_files():
@@ -57,7 +60,9 @@ def test_agent_run():
         question="What files exist?",
         repo_path="/Users/arpitratan/ai-lab/ai_autodoc",
     )
-    planner = HardcodedPlanner()  # Using hardcoded planner for deterministic test execution
+    planner = (
+        HardcodedPlanner()
+    )  # Using hardcoded planner for deterministic test execution
     agent = Agent(
         state=state,
         planner=planner,

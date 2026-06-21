@@ -21,19 +21,10 @@ class AgentState:
     observations: list[str] = field(default_factory=list)
     """List of observations or notes made by the agent during analysis."""
 
-    def print_state(self):
-
-        print()
-        print("STATE")
-        print("-" * 40)
-
-        print(f"Files Seen: {len(self.files_seen)}")
-
-        print(f"Files Read: {len(self.files_read)}")
-
-        print()
-
-        print("Recent Observations:")
-
-        for observation in self.observations[-5:]:
-            print(f"  - {observation}")
+    def summary(self):
+        return {
+            "files_seen": len(self.files_seen),
+            "files_read": len(self.files_read),
+            "search_results": len(self.search_results),
+            "observations": len(self.observations),
+        }

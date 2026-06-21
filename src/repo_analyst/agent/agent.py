@@ -50,9 +50,7 @@ class Agent:
     def _handle_list_files(self, tool_result: ToolResult):
         """Handle the result of a list_files tool execution."""
         self.state.files_seen.update(tool_result.result)
-        self.state.observations.append(
-            f"Discovered {len(tool_result.result)} files"
-        )
+        self.state.observations.append(f"Discovered {len(tool_result.result)} files")
 
     def _handle_search_text(self, tool_result: ToolResult):
         """Handle the result of a search_text tool execution."""
@@ -72,21 +70,45 @@ class Agent:
         tool_call: ToolCall,
     ) -> ToolResult:
         """Execute a single step of the agent's workflow."""
+        self.logger.info("")
+        self.logger.info("=" * 60)
         self.logger.info(f"Executing Tool: {tool_call.tool_name}")
+        self.logger.info("=" * 60)
         self.logger.debug(f"Arguments: {tool_call.args}")
         tool_result = self.execute_tool(tool_call)
-        self.logger.info("Tool Completed")
+        self.logger.info("Tool execution completed")
 
         self.apply_tool_result(tool_result)
-        self.state.print_state()
+        self.log_state()
 
         return tool_result
 
     def run(self):
         """Run the agent until the planner indicates completion."""
+        self.logger.info("Agent started")
         while True:
             tool_call = self.planner.next_tool_call(self.state)
             if tool_call is None:
                 self.logger.info("Agent workflow completed.")
                 break
             self.run_step(tool_call)
+
+    def log_state(self):
+
+        summary = self.state.summary()
+
+        self.logger.info("")
+        self.logger.info("STATE")
+        self.logger.info("-" * 40)
+
+        for key, value in summary.items():
+
+            self.logger.info(f"{key}: {value}")
+
+        self.logger.info("")
+
+        self.logger.info("Recent Observations:")
+
+        for observation in self.state.observations[-5:]:
+
+            self.logger.info(f"  - {observation}")
