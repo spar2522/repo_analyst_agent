@@ -30,6 +30,10 @@ class AgentState:
     """Flag indicating whether the search phase has been completed."""
 
     run_id: int | None = None
+    """Unique identifier for the current analysis run."""
+
+    final_answer: str | None = None
+    """Final answer or conclusion derived by the agent after analysis."""
 
     def summary(self):
         """Returns a summary of the agent's state with counts of key elements.
