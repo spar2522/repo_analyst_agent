@@ -1,5 +1,4 @@
 from repo_analyst.agent.agent_state import AgentState
-from repo_analyst.agent.summarizers.file_summarizer import summarize_file
 from repo_analyst.planner.planner import Planner
 from repo_analyst.tool_call import ToolCall
 from repo_analyst.tools.tools_registry import TOOLS
@@ -10,6 +9,8 @@ import logging
 
 
 class Agent:
+    """Agent class that coordinates tool execution and state management for repository analysis."""
+
     def __init__(
         self,
         state: AgentState,
@@ -60,79 +61,44 @@ class Agent:
     def _handle_search_text(self, tool_result: ToolResult):
         """Handle the result of a search_text tool execution."""
         self.state.search_results.update(tool_result.result)
-        self.state.search_completed = True
-
-        self.state.observations.append(
-            f"Found {len(tool_result.result)} matching files"
-        )
+        self.state.observations.append(f"Found {len(tool_result.result)} matches")
 
     def _handle_read_file(self, tool_result: ToolResult):
         """Handle the result of a read_file tool execution."""
-        file_path = tool_result.tool_call.args["file_path"]
-        self.state.files_read.add(file_path)
-        self.logger.info(f"File Size: {len(tool_result.result)} chars")
+        file_path = tool_result.tool_call.args.get("file_path")
+        if not file_path:
+            self.logger.error("Missing 'file_path' in tool_call arguments for read_file")
+            return
 
-        summary = self.file_summarizer.summarize(
-            question=self.state.question,
-            file_path=file_path,
-            content=tool_result.result,
-        )
+        try:
+            content = tool_result.result
+            summary = self.file_summarizer.summarize(content)
+            self.state.findings.append(summary)
+            self.state.observations.append(f"Read and summarized file: {file_path}")
+        except Exception as e:
+            self.logger.error(f"Error processing file {file_path}: {str(e)}")
 
-        self.state.findings.append(summary)
-        self.state.observations.append(f"Read {file_path}")
-
-    def run_step(
-        self,
-        tool_call: ToolCall,
-    ) -> ToolResult:
+    def run_step(self):
         """Execute a single step of the agent's workflow."""
-        self.logger.info("")
-        self.logger.info("=" * 60)
-        self.logger.info(f"Executing Tool: {tool_call.tool_name}")
-        self.logger.info("=" * 60)
-        self.logger.info(f"Arguments: {tool_call.args}")
+        tool_call = self.planner.plan(self.state)
+        if not tool_call:
+            self.logger.info("No tool call planned. Ending workflow.")
+            return False
+
         tool_result = self.execute_tool(tool_call)
-        self.logger.info("Tool execution completed")
-
         self.apply_tool_result(tool_result)
-        self.log_state()
-
-        return tool_result
+        return True
 
     def run(self):
         """Run the agent until the planner indicates completion."""
-        self.logger.info("Agent started")
-        while True:
-            tool_call = self.planner.next_tool_call(self.state)
-            if tool_call is None:
-                self.logger.info("Agent workflow completed.")
-                break
-            self.run_step(tool_call)
+        while self.run_step():
+            pass
 
     def log_state(self):
-
-        summary = self.state.summary()
-
-        self.logger.info("")
-        self.logger.info("STATE")
-        self.logger.info("-" * 40)
-
-        for key, value in summary.items():
-
-            self.logger.info(f"{key}: {value}")
-
-        self.logger.info("")
-
-        self.logger.info("Recent Observations:")
-
-        for observation in self.state.observations[-5:]:
-
-            self.logger.info(f"  - {observation}")
-
-        self.logger.info("")
-
-        self.logger.info("Recent Findings:")
-
-        for observation in self.state.findings:
-
-            self.logger.info(f"  - {observation}")
+        """Log the current state of the agent for debugging and monitoring."""
+        self.logger.info("=== Agent State ===")
+        self.logger.info(f"Files seen: {len(self.state.files_seen)}")
+        self.logger.info(f"Search results: {len(self.state.search_results)}")
+        self.logger.info(f"Findings: {len(self.state.findings)}")
+        self.logger.info(f"Observations: {self.state.observations[-5:]}")  # Last 5 observations
+        self.logger.info("=== End of State ===")
