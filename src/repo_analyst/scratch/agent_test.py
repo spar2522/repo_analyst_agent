@@ -21,7 +21,7 @@ def test_list_files():
             },
         )
     )
-    logging.info("List files result: %s", result)
+    logging.info("Test List Files - Result: %s", result)
 
 
 def test_search_text():
@@ -37,7 +37,7 @@ def test_search_text():
             },
         )
     )
-    logging.info("Search text result: %s", result)
+    logging.info("Test Search Text - Result: %s", result)
 
 
 def test_run_step():
@@ -52,7 +52,7 @@ def test_run_step():
             },
         )
     )
-    logging.info("Run step result: %s", result)
+    logging.info("Test Run Step - Result: %s", result)
     logging.info("Agent state after step execution:")
     logging.info(state)
 
@@ -61,11 +61,9 @@ def test_agent_run():
     """Test the full agent run with a hardcoded planner for deterministic execution."""
     state = AgentState(
         question="Why is webhook used?",
-        repo_path="/Users/arpitratan/ai-lab/ai_autodoc",
+        repo_path=REPO_PATH,
     )
-    planner = (
-        HardcodedPlanner()
-    )  # Using hardcoded planner for deterministic test execution
+    planner = HardcodedPlanner()  # Using hardcoded planner for deterministic test execution
     agent = Agent(
         state=state,
         planner=planner,
@@ -75,6 +73,7 @@ def test_agent_run():
 
 if __name__ == "__main__":
     # Set the test name to run. Options: "list_files", "search_text", "run_step", "test_agent_run"
+    # Modify TEST_NAME below to select which test to execute
     TEST_NAME = "test_agent_run"
     test_functions = {
         "list_files": test_list_files,
