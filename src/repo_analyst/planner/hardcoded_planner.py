@@ -3,9 +3,7 @@ import logging
 from repo_analyst.agent.agent_state import AgentState
 from repo_analyst.planner.planner import Planner
 from repo_analyst.tool_call import ToolCall
-from repo_analyst.planner.query_extractor import (
-    extract_search_term,
-)
+from repo_analyst.planner.query_extractor import extract_search_term
 
 MAX_FILES_TO_READ = 5
 
@@ -23,6 +21,14 @@ class HardcodedPlanner(Planner):
         state: AgentState,
     ) -> ToolCall | None:
         """Determine the next tool call based on the agent's state.
+
+        The planner follows a sequence of steps:
+        1. If no files have been seen, list all files in the repository.
+        2. If the search hasn't been completed, perform a search based on the question.
+        3. If search results are not available, return None.
+        4. If the maximum number of files to read has been reached, return None.
+        5. If there are unread files, read the first one.
+        6. If no further actions are needed, return None.
 
         Args:
             state: The current state of the agent.
