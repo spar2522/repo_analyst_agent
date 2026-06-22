@@ -1,5 +1,6 @@
 from repo_analyst.agent.agent_state import AgentState
 from repo_analyst.agent.summarizers.file_summarizer import summarize_file
+from repo_analyst.llm.answer_generator import AnswerGenerator
 from repo_analyst.planner.planner import Planner
 from repo_analyst.tool_call import ToolCall
 from repo_analyst.tools.tools_registry import TOOLS
@@ -29,7 +30,9 @@ class Agent:
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
-        self.file_summarizer = FileSummarizer(LLMClient())
+        llm_client = LLMClient()
+        self.file_summarizer = FileSummarizer(llm_client)
+        self.answer_generator = AnswerGenerator(llm_client)
 
         self.handlers = {
             "list_files": self._handle_list_files,
@@ -136,6 +139,18 @@ class Agent:
                 self.logger.info("Agent workflow completed.")
                 break
             await self.run_step(tool_call)
+
+        answer = self.answer_generator.generate(
+            question=self.state.question,
+            findings=self.state.findings,
+        )
+
+        self.state.final_answer = answer
+
+        self.logger.info("")
+        self.logger.info("FINAL ANSWER")
+        self.logger.info("=" * 60)
+        self.logger.info(answer)
 
     async def log_state(self):
 
