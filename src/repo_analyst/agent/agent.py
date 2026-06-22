@@ -7,7 +7,9 @@ from repo_analyst.tools.tools_registry import TOOLS
 from repo_analyst.tool_result import ToolResult
 from repo_analyst.llm.file_summariser import FileSummarizer
 from repo_analyst.llm.llm_client import LLMClient
-import asyncio
+from repo_analyst.database.file_summary_repository import (
+    FileSummaryRepository,
+)
 
 from repo_analyst.database.agent_run_repository import (
     AgentRunRepository,
@@ -43,6 +45,8 @@ class Agent:
         self.agent_run_repository = AgentRunRepository()
 
         self.agent_finding_repository = AgentFindingRepository()
+
+        self.file_summary_repository = FileSummaryRepository()
 
     async def execute_tool(
         self,
@@ -88,11 +92,25 @@ class Agent:
         self.state.files_read.add(file_path)
         self.logger.info(f"File Size: {len(tool_result.result)} chars")
 
-        summary = self.file_summarizer.summarize(
-            question=self.state.question,
-            file_path=file_path,
-            content=tool_result.result,
+        existing_summary = await self.file_summary_repository.get_summary(
+            self.state.repo_path,
+            file_path,
         )
+
+        if existing_summary:
+            self.logger.info(f"⚡ Loaded cached summary: {file_path}")
+            summary = existing_summary.summary
+
+        else:
+            summary = await self.file_summarizer.summarize(
+                file_path=file_path,
+                content=tool_result.result,
+            )
+            await self.file_summary_repository.save_summary(
+                repo_path=self.state.repo_path,
+                file_path=file_path,
+                summary=summary,
+            )
 
         self.state.findings.append(summary)
 

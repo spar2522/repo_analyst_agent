@@ -3,6 +3,12 @@ from repo_analyst.database.database import (
     Base,
 )
 
+from repo_analyst.database.models import (
+    AgentRun,
+    AgentFinding,
+    FileSummary,
+)
+
 import asyncio
 
 

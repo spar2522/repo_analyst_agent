@@ -19,9 +19,8 @@ class FileSummarizer:
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
-    def summarize(
+    async def summarize(
         self,
-        question: str,
         file_path: str,
         content: str,
     ) -> str:
@@ -30,24 +29,25 @@ class FileSummarizer:
 
         spinner.start()
         prompt = f"""
-You are helping answer a repository question.
-
-Question:
-{question}
+You are analysing a source code file.
 
 File:
 {file_path}
 
 Code:
-{content[:4000]}  # Limit content to first 4000 characters for summarization
+{content}
 
-Instructions:
+Describe:
 
-Summarize only information relevant to answering the question.
+- Purpose of this file
+- Main responsibilities
+- Important classes/functions
+- External integrations
+- Architectural role
 
-If the file is not relevant, explicitly say so.
-
-Return 2-5 concise bullet points.
+Keep the summary repository-specific.
+Do not explain generic programming concepts.
+Do not answer any user question.
 """
         summary = self.llm_client.generate(prompt)
         spinner.stop()

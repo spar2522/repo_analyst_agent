@@ -65,3 +65,33 @@ class AgentFinding(Base):
         TIMESTAMP,
         server_default=func.now(),
     )
+
+
+class FileSummary(Base):
+
+    __tablename__ = "file_summaries"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+    )
+
+    repo_path = Column(
+        Text,
+        nullable=False,
+    )
+
+    file_path = Column(
+        Text,
+        nullable=False,
+    )
+
+    summary = Column(
+        Text,
+        nullable=False,
+    )
+
+    created_at = Column(
+        TIMESTAMP,
+        server_default=func.now(),
+    )
