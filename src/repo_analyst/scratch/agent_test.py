@@ -60,7 +60,7 @@ def test_run_step():
 def test_agent_run():
     """Test the full agent run with a hardcoded planner for deterministic execution."""
     state = AgentState(
-        question="How does Redis work?",
+        question="Why is webhook used?",
         repo_path="/Users/arpitratan/ai-lab/ai_autodoc",
     )
     planner = (

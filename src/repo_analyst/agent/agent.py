@@ -4,6 +4,8 @@ from repo_analyst.planner.planner import Planner
 from repo_analyst.tool_call import ToolCall
 from repo_analyst.tools.tools_registry import TOOLS
 from repo_analyst.tool_result import ToolResult
+from repo_analyst.llm.file_summariser import FileSummarizer
+from repo_analyst.llm.llm_client import LLMClient
 import logging
 
 
@@ -17,6 +19,8 @@ class Agent:
         self.planner = planner
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
+
+        self.file_summarizer = FileSummarizer(LLMClient())
 
         self.handlers = {
             "list_files": self._handle_list_files,
@@ -66,7 +70,10 @@ class Agent:
         """Handle the result of a read_file tool execution."""
         file_path = tool_result.tool_call.args["file_path"]
         self.state.files_read.add(file_path)
-        summary = summarize_file(
+        self.logger.info(f"File Size: {len(tool_result.result)} chars")
+
+        summary = self.file_summarizer.summarize(
+            question=self.state.question,
             file_path=file_path,
             content=tool_result.result,
         )
