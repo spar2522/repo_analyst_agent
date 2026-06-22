@@ -26,11 +26,11 @@ async def test_list_files():
     logging.info("Test List Files - Result: %s", result)
 
 
-def test_search_text():
+async def test_search_text():
     """Test the search_text tool by searching for 'redis' in the repository."""
     state = AgentState(question="How does Redis work?")
     agent = Agent(state)
-    result = agent.execute_tool(
+    result = await agent.execute_tool(
         ToolCall(
             tool_name="search_text",
             args={
@@ -60,31 +60,22 @@ async def test_run_step():
 
 
 async def test_agent_run():
-    """Test the full agent run with a hardcoded planner for deterministic execution."""
-    state = AgentState(
-        question="Why is webhook used?",
-        repo_path=REPO_PATH,
-    )
-    planner = HardcodedPlanner()  # Using hardcoded planner for deterministic test execution
-    agent = Agent(
-        state=state,
-        planner=planner,
-    )
-    await agent.run()
+    """Test the full agent workflow with a hardcoded planner."""
+    state = AgentState(question="What is the project structure?")
+    agent = Agent(state)
+    planner = HardcodedPlanner()
+    result = await agent.run(planner)
+    logging.info("Test Agent Run - Result: %s", result)
 
 
 if __name__ == "__main__":
-    # Set the test name to run. Options: "list_files", "search_text", "run_step", "test_agent_run"
-    # Modify TEST_NAME below to select which test to execute
-    TEST_NAME = "test_agent_run"
-    test_functions = {
+    TEST_SUITE = {
         "list_files": test_list_files,
         "search_text": test_search_text,
         "run_step": test_run_step,
-        "test_agent_run": test_agent_run,
+        "agent_run": test_agent_run,
     }
 
-    if TEST_NAME in test_functions:
-        asyncio.run(test_functions[TEST_NAME]())
-    else:
-        raise ValueError(f"Unknown test: {TEST_NAME}")
+    TEST_NAME = "agent_run"
+    test_function = TEST_SUITE[TEST_NAME]
+    asyncio.run(test_function())
