@@ -1,3 +1,5 @@
+import asyncio
+
 from repo_analyst.agent.agent import Agent
 from repo_analyst.agent.agent_state import AgentState
 from repo_analyst.planner.hardcoded_planner import HardcodedPlanner
@@ -9,11 +11,11 @@ REPO_PATH = "/Users/arpitratan/ai-lab/ai_autodoc"
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
-def test_list_files():
+async def test_list_files():
     """Test the list_files tool by listing all files in the repository."""
     state = AgentState(question="What files exist?")
     agent = Agent(state)
-    result = agent.execute_tool(
+    result = await agent.execute_tool(
         ToolCall(
             tool_name="list_files",
             args={
@@ -40,11 +42,11 @@ def test_search_text():
     logging.info("Test Search Text - Result: %s", result)
 
 
-def test_run_step():
+async def test_run_step():
     """Test the run_step method by executing the list_files tool manually."""
     state = AgentState(question="What files exist?")
     agent = Agent(state)
-    result = agent.run_step(
+    result = await agent.run_step(
         ToolCall(
             tool_name="list_files",
             args={
@@ -57,7 +59,7 @@ def test_run_step():
     logging.info(state)
 
 
-def test_agent_run():
+async def test_agent_run():
     """Test the full agent run with a hardcoded planner for deterministic execution."""
     state = AgentState(
         question="Why is webhook used?",
@@ -68,7 +70,7 @@ def test_agent_run():
         state=state,
         planner=planner,
     )
-    agent.run()
+    await agent.run()
 
 
 if __name__ == "__main__":
@@ -83,6 +85,6 @@ if __name__ == "__main__":
     }
 
     if TEST_NAME in test_functions:
-        test_functions[TEST_NAME]()
+        asyncio.run(test_functions[TEST_NAME]())
     else:
         raise ValueError(f"Unknown test: {TEST_NAME}")

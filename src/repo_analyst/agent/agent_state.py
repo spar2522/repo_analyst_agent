@@ -29,12 +29,17 @@ class AgentState:
     search_completed: bool = False
     """Flag indicating whether the search phase has been completed."""
 
+    run_id: int | None = None
+
     def summary(self):
         """Returns a summary of the agent's state with counts of key elements.
 
         This is useful for logging progress or monitoring the agent's status during analysis.
         """
         return {
+            "run_id": self.run_id,
+            "question": self.question,
+            "repo_path": self.repo_path,
             "files_seen": len(self.files_seen),
             "files_read": len(self.files_read),
             "search_results": len(self.search_results),
@@ -45,7 +50,7 @@ class AgentState:
 
     def __repr__(self):
         return (
-            f"AgentState(question='{self.question}', repo_path='{self.repo_path}', "
+            f"AgentState(run_id={self.run_id}, question='{self.question}', repo_path='{self.repo_path}', "
             f"files_seen={len(self.files_seen)}, files_read={len(self.files_read)}, "
             f"search_results={len(self.search_results)}, observations={len(self.observations)}, "
             f"findings={len(self.findings)})"
