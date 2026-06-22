@@ -29,171 +29,106 @@ class Agent:
     ):
         self.state = state
         self.planner = planner
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-
-        llm_client = LLMClient()
-        self.file_summarizer = FileSummarizer(llm_client)
-        self.answer_generator = AnswerGenerator(llm_client)
+        self.llm_client = LLMClient()
+        self.file_summarizer = FileSummarizer(self.llm_client)
+        self.file_summary_repo = FileSummaryRepository()
+        self.agent_run_repo = AgentRunRepository()
+        self.agent_finding_repo = AgentFindingRepository()
 
         self.handlers = {
-            "list_files": self._handle_list_files,
-            "search_text": self._handle_search_text,
             "read_file": self._handle_read_file,
         }
 
-        self.agent_run_repository = AgentRunRepository()
+    async def execute_tool(self, tool_call: ToolCall) -> dict:
+        """Execute the specified tool with the given parameters."""
+        try:
+            tool = TOOLS[tool_call.tool_name]
+            result = await tool(**tool_call.parameters)
+            return {"status": "success", "result": result}
+        except Exception as e:
+            logging.error(f"Error executing tool {tool_call.tool_name}: {str(e)}")
+            return {"status": "error", "message": str(e)}
 
-        self.agent_finding_repository = AgentFindingRepository()
+    async def apply_tool_result(self, tool_call: ToolCall, result: dict):
+        """Apply the result of a tool execution."""
+        try:
+            handler = self.handlers.get(tool_call.tool_name)
+            if handler:
+                await handler(tool_call, result)
+            else:
+                logging.warning(f"No handler found for tool {tool_call.tool_name}")
+        except Exception as e:
+            logging.error(f"Error applying tool result for {tool_call.tool_name}: {str(e)}")
 
-        self.file_summary_repository = FileSummaryRepository()
+    async def _handle_read_file(self, tool_call: ToolCall, result: dict):
+        """Handle the result of a file read operation."""
+        try:
+            file_content = result.get("result")
+            if not file_content:
+                logging.warning("No content received from file read operation")
+                return
 
-    async def execute_tool(
-        self,
-        tool_call: ToolCall,
-    ) -> ToolResult:
-        """Execute the specified tool and return the result."""
-        tool = TOOLS[tool_call.tool_name]
-        result = tool(**tool_call.args)
-        return ToolResult(
-            tool_name=tool_call.tool_name,
-            result=result,
-            tool_call=tool_call,
-        )
+            file_path = tool_call.parameters.get("file_path")
+            if not file_path:
+                logging.warning("File path missing in tool call parameters")
+                return
 
-    async def apply_tool_result(
-        self,
-        tool_result: ToolResult,
-    ):
-        """Apply the result of a tool execution to the agent state."""
-        handler = self.handlers.get(tool_result.tool_name)
-        if handler:
-            await handler(tool_result)
-        else:
-            self.logger.warning(f"No handler found for tool: {tool_result.tool_name}")
+            # Check for existing summary
+            existing_summary = await self.file_summary_repo.get_summary(file_path)
+            if existing_summary:
+                logging.info(f"Using cached summary for {file_path}")
+                self.state.add_result("summary", existing_summary)
+                return
 
-    async def _handle_list_files(self, tool_result: ToolResult):
-        """Handle the result of a list_files tool execution."""
-        self.state.files_seen.update(tool_result.result)
-        self.state.observations.append(f"Discovered {len(tool_result.result)} files")
-
-    async def _handle_search_text(self, tool_result: ToolResult):
-        """Handle the result of a search_text tool execution."""
-        self.state.search_results.update(tool_result.result)
-        self.state.search_completed = True
-
-        self.state.observations.append(
-            f"Found {len(tool_result.result)} matching files"
-        )
-
-    async def _handle_read_file(self, tool_result: ToolResult):
-        """Handle the result of a read_file tool execution."""
-        file_path = tool_result.tool_call.args["file_path"]
-        self.state.files_read.add(file_path)
-        self.logger.info(f"File Size: {len(tool_result.result)} chars")
-
-        existing_summary = await self.file_summary_repository.get_summary(
-            self.state.repo_path,
-            file_path,
-        )
-
-        if existing_summary:
-            self.logger.info(f"⚡ Loaded cached summary: {file_path}")
-            summary = existing_summary.summary
-
-        else:
+            # Generate new summary
             summary = await self.file_summarizer.summarize(
                 file_path=file_path,
-                content=tool_result.result,
+                content=file_content,
             )
-            await self.file_summary_repository.save_summary(
-                repo_path=self.state.repo_path,
-                file_path=file_path,
-                summary=summary,
-            )
+            await self.file_summary_repo.save_summary(file_path, summary)
+            logging.info(f"Saved new summary for {file_path}")
+            self.state.add_result("summary", summary)
 
-        self.state.findings.append(summary)
+        except Exception as e:
+            logging.error(f"Error handling file read for {file_path}: {str(e)}")
 
-        await self.agent_finding_repository.save_finding(
-            run_id=self.state.run_id,
-            file_path=file_path,
-            finding=summary,
-        )
-
-        self.logger.info("Finding persisted")
-        self.state.observations.append(f"Read {file_path}")
-
-    async def run_step(
-        self,
-        tool_call: ToolCall,
-    ) -> ToolResult:
-        """Execute a single step of the agent's workflow."""
-        self.logger.info("")
-        self.logger.info("=" * 60)
-        self.logger.info(f"Executing Tool: {tool_call.tool_name}")
-        self.logger.info("=" * 60)
-        self.logger.info(f"Arguments: {tool_call.args}")
-        tool_result = await self.execute_tool(tool_call)
-        self.logger.info("Tool execution completed")
-
-        await self.apply_tool_result(tool_result)
-        await self.log_state()
-
-        return tool_result
+    async def run_step(self, tool_call: ToolCall):
+        """Execute a single step in the agent workflow."""
+        try:
+            logging.info(f"Executing tool {tool_call.tool_name}")
+            result = await self.execute_tool(tool_call)
+            await self.apply_tool_result(tool_call, result)
+            return result
+        except Exception as e:
+            logging.error(f"Error in run step for {tool_call.tool_name}: {str(e)}")
+            return {"status": "error", "message": str(e)}
 
     async def run(self):
-        """Run the agent until the planner indicates completion."""
-        run = await self.agent_run_repository.create_run(
-            question=self.state.question,
-            repo_path=self.state.repo_path,
-        )
-        self.state.run_id = run.id
-        self.logger.info(f"Created Agent Run: {run.id}")
+        """Run the agent workflow."""
+        try:
+            logging.info("Starting agent workflow")
+            self.state.start_timer()
 
-        self.logger.info("Agent started")
-        while True:
-            tool_call = self.planner.next_tool_call(self.state)
-            if tool_call is None:
-                self.logger.info("Agent workflow completed.")
-                break
-            await self.run_step(tool_call)
+            # Create agent run record
+            run_id = await self.agent_run_repo.create_run(self.state)
+            self.state.run_id = run_id
 
-        answer = self.answer_generator.generate(
-            question=self.state.question,
-            findings=self.state.findings,
-        )
+            # Execute all steps
+            for step in self.planner.get_steps():
+                result = await self.run_step(step)
+                if result["status"] != "success":
+                    logging.error(f"Step {step.tool_name} failed: {result['message']}")
+                    break
 
-        self.state.final_answer = answer
+            # Generate final answer
+            answer = await self.answer_generator.generate(self.state)
+            await self.agent_finding_repo.save_finding(run_id, answer)
+            logging.info("Agent workflow completed successfully")
 
-        self.logger.info("")
-        self.logger.info("FINAL ANSWER")
-        self.logger.info("=" * 60)
-        self.logger.info(answer)
+        except Exception as e:
+            logging.error(f"Critical error in agent workflow: {str(e)}")
+            return {"status": "error", "message": str(e)}
 
-    async def log_state(self):
-
-        summary = self.state.summary()
-
-        self.logger.info("")
-        self.logger.info("STATE")
-        self.logger.info("-" * 40)
-
-        for key, value in summary.items():
-
-            self.logger.info(f"{key}: {value}")
-
-        self.logger.info("")
-
-        self.logger.info("Recent Observations:")
-
-        for observation in self.state.observations[-5:]:
-
-            self.logger.info(f"  - {observation}")
-
-        self.logger.info("")
-
-        self.logger.info("Recent Findings:")
-
-        for observation in self.state.findings:
-
-            self.logger.info(f"  - {observation}")
+        finally:
+            self.state.stop_timer()
+            logging.info(f"Agent workflow completed in {self.state.duration:.2f} seconds")
