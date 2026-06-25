@@ -1,3 +1,8 @@
+"""Test script for FileSummaryRepository.
+
+This script demonstrates saving and retrieving file summaries using the FileSummaryRepository.
+"""
+
 import asyncio
 
 from repo_analyst.database.file_summary_repository import (
@@ -5,9 +10,12 @@ from repo_analyst.database.file_summary_repository import (
 )
 
 
-async def main():
+async def main() -> None:
+    """Main function to test FileSummaryRepository.
 
-    repository = FileSummaryRepository()
+    Saves a summary for a test file and retrieves it to verify functionality.
+    """
+    repository: FileSummaryRepository = FileSummaryRepository()
 
     await repository.save_summary(
         repo_path="test",
