@@ -35,8 +35,10 @@ class AgentState:
     """Flag indicating whether the search phase has been completed."""
 
     summary_search_completed: bool = False
+    """Flag indicating whether the summary search phase has been completed."""
 
     relevant_summaries: list = field(default_factory=list)
+    """List of tuples containing (score, summary) for relevant summaries found during analysis."""
 
     run_id: int | None = None
     """Unique identifier for the current run of the agent."""
@@ -62,12 +64,17 @@ class AgentState:
         }
 
     def findings_from_summaries(self):
+        """Generate formatted findings from relevant summaries.
+
+        Returns a list of strings in the format "[file_path]\nsummary_content".
+        """
         return [
             f"[{summary.file_path}]\n{summary.summary}"
             for score, summary in self.relevant_summaries
         ]
 
     def __repr__(self):
+        """Return a string representation of the AgentState instance."""
         return (
             f"AgentState(run_id={self.run_id}, question='{self.question}', repo_path='{self.repo_path}', "
             f"files_seen={len(self.files_seen)}, files_read={len(self.files_read)}, "
