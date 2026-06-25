@@ -7,6 +7,20 @@ from repo_analyst.tool_call import ToolCall
 import logging
 
 REPO_PATH = "/Users/arpitratan/ai-lab/ai_autodoc"
+QUESTIONS = {
+    "webhook": "Why are webhooks used?",
+    "redis": "How is Redis used in this repository?",
+    "worker": "How are background workers implemented?",
+    "github": "How does GitHub integration work?",
+    "review": "How does AutoDoc review code?",
+    "pr": "How are pull requests created?",
+    "queue": "How are tasks queued and processed?",
+    "api": "How is FastAPI used in this project?",
+    "architecture": "Explain the architecture of this repository.",
+    "flow": "What happens when code is pushed to GitHub?",
+    "entrypoint": "What are the main entry points of this application?",
+    "storage": "How is data persisted in the system?",
+}
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -61,11 +75,21 @@ async def test_run_step():
 
 async def test_agent_run():
     """Test the full agent run with a hardcoded planner for deterministic execution."""
+
+    q = QUESTIONS["worker"]
+
+    logging.info("=" * 60)
+    logging.info(f"Question : {q}")
+    logging.info("=" * 60)
+
     state = AgentState(
-        question="Why is webhook used?",
+        question=q,
         repo_path=REPO_PATH,
     )
-    planner = HardcodedPlanner()  # Using hardcoded planner for deterministic test execution
+
+    planner = (
+        HardcodedPlanner()
+    )  # Using hardcoded planner for deterministic test execution
     agent = Agent(
         state=state,
         planner=planner,

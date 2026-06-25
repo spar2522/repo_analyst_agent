@@ -7,6 +7,7 @@ from repo_analyst.database.models import (
     AgentRun,
     AgentFinding,
     FileSummary,
+    FileEmbedding,
 )
 
 import asyncio

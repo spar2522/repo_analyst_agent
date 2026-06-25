@@ -3,6 +3,7 @@ from sqlalchemy import (
     Integer,
     Text,
     TIMESTAMP,
+    JSON,
 )
 from sqlalchemy.sql import func
 
@@ -88,6 +89,36 @@ class FileSummary(Base):
 
     summary = Column(
         Text,
+        nullable=False,
+    )
+
+    created_at = Column(
+        TIMESTAMP,
+        server_default=func.now(),
+    )
+
+
+class FileEmbedding(Base):
+
+    __tablename__ = "file_embeddings"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+    )
+
+    repo_path = Column(
+        Text,
+        nullable=False,
+    )
+
+    file_path = Column(
+        Text,
+        nullable=False,
+    )
+
+    embedding = Column(
+        JSON,
         nullable=False,
     )
 

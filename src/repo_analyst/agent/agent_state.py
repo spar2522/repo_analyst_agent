@@ -34,6 +34,10 @@ class AgentState:
     search_completed: bool = False
     """Flag indicating whether the search phase has been completed."""
 
+    summary_search_completed: bool = False
+
+    relevant_summaries: list = field(default_factory=list)
+
     run_id: int | None = None
     """Unique identifier for the current run of the agent."""
 
@@ -56,6 +60,12 @@ class AgentState:
             "findings": len(self.findings),
             "search_completed": self.search_completed,
         }
+
+    def findings_from_summaries(self):
+        return [
+            f"[{summary.file_path}]\n{summary.summary}"
+            for score, summary in self.relevant_summaries
+        ]
 
     def __repr__(self):
         return (

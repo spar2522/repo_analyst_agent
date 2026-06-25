@@ -49,3 +49,16 @@ class FileSummaryRepository:
             )
 
             return result.scalars().first()
+
+    async def get_all_summaries(
+        self,
+        repo_path: str,
+    ) -> list[FileSummary]:
+
+        async with AsyncSessionLocal() as db:
+
+            result = await db.execute(
+                select(FileSummary).where(FileSummary.repo_path == repo_path)
+            )
+
+        return list(result.scalars().all())

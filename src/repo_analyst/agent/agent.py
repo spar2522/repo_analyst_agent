@@ -152,7 +152,7 @@ class Agent:
 
         self.logger.info("Agent started")
         while True:
-            tool_call = self.planner.next_tool_call(self.state)
+            tool_call = await self.planner.next_tool_call(self.state)
             if tool_call is None:
                 self.logger.info("Agent workflow completed.")
                 break

@@ -4,6 +4,10 @@ from repo_analyst.agent.agent_state import AgentState
 from repo_analyst.planner.planner import Planner
 from repo_analyst.tool_call import ToolCall
 from repo_analyst.planner.query_extractor import extract_search_term
+from repo_analyst.database.file_summary_repository import (
+    FileSummaryRepository,
+)
+from repo_analyst.search.summary_search import SummarySearch
 
 MAX_FILES_TO_READ = 5
 
@@ -15,8 +19,10 @@ class HardcodedPlanner(Planner):
         super().__init__()
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
+        self.file_summary_repository = FileSummaryRepository()
+        self.summary_search = SummarySearch()
 
-    def next_tool_call(
+    async def next_tool_call(
         self,
         state: AgentState,
     ) -> ToolCall | None:
@@ -36,6 +42,34 @@ class HardcodedPlanner(Planner):
         Returns:
             The next ToolCall to execute, or None if no further action is needed.
         """
+
+        if not state.summary_search_completed:
+
+            self.logger.info("Planner: Searching indexed summaries")
+
+            summaries = await self.file_summary_repository.get_all_summaries(
+                state.repo_path
+            )
+
+            state.relevant_summaries = await self.summary_search.search(
+                question=state.question,
+                summaries=summaries,
+            )
+
+            state.summary_search_completed = True
+
+            self.logger.info(
+                f"Planner: Found "
+                f"{len(state.relevant_summaries)} "
+                f"candidate summaries"
+            )
+
+            if state.relevant_summaries:
+                top_score = state.relevant_summaries[0][0]
+                if top_score >= 3:
+                    self.logger.info("Planner: Summary search " "looks good.")
+                    state.findings = state.findings_from_summaries()
+                    return None
 
         # First, if no files have been seen, list the files in the repository
         if not state.files_seen:
