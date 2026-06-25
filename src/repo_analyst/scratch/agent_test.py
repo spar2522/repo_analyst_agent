@@ -22,6 +22,8 @@ QUESTIONS = {
     "storage": "How is data persisted in the system?",
 }
 
+# Configuration for test questions
+# Each key represents a topic and the value is the question used for testing
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
@@ -40,11 +42,11 @@ async def test_list_files():
     logging.info("Test List Files - Result: %s", result)
 
 
-def test_search_text():
+async def test_search_text():
     """Test the search_text tool by searching for 'redis' in the repository."""
     state = AgentState(question="How does Redis work?")
     agent = Agent(state)
-    result = agent.execute_tool(
+    result = await agent.execute_tool(
         ToolCall(
             tool_name="search_text",
             args={
@@ -79,36 +81,38 @@ async def test_agent_run():
     q = QUESTIONS["worker"]
 
     logging.info("=" * 60)
-    logging.info(f"Question : {q}")
+    logging.info("Running test for question: %s", q)
     logging.info("=" * 60)
 
-    state = AgentState(
-        question=q,
-        repo_path=REPO_PATH,
-    )
+    state = AgentState(question=q)
+    agent = Agent(state)
+    planner = HardcodedPlanner()
 
-    planner = (
-        HardcodedPlanner()
-    )  # Using hardcoded planner for deterministic test execution
-    agent = Agent(
-        state=state,
-        planner=planner,
-    )
-    await agent.run()
+    # Execute agent with hardcoded planner
+    result = await agent.run(planner)
+
+    logging.info("Test Agent Run - Result: %s", result)
 
 
 if __name__ == "__main__":
-    # Set the test name to run. Options: "list_files", "search_text", "run_step", "test_agent_run"
-    # Modify TEST_NAME below to select which test to execute
+    # Configuration for test execution
+    # Set the test to run by changing the value of TEST_NAME
     TEST_NAME = "test_agent_run"
+
+    # Mapping of test names to test functions
     test_functions = {
-        "list_files": test_list_files,
-        "search_text": test_search_text,
-        "run_step": test_run_step,
+        "test_list_files": test_list_files,
+        "test_search_text": test_search_text,
+        "test_run_step": test_run_step,
         "test_agent_run": test_agent_run,
     }
 
+    # Execute the selected test
     if TEST_NAME in test_functions:
-        asyncio.run(test_functions[TEST_NAME]())
+        test_function = test_functions[TEST_NAME]
+        try:
+            await test_function()
+        except Exception as e:
+            logging.error("Test failed with error: %s", e)
     else:
-        raise ValueError(f"Unknown test: {TEST_NAME}")
+        logging.error("Invalid test name: %s", TEST_NAME)
