@@ -10,6 +10,7 @@ from repo_analyst.database.file_summary_repository import (
 from repo_analyst.search.summary_search import SummarySearch
 
 MAX_FILES_TO_READ = 5
+SUMMARY_SEARCH_THRESHOLD = 3
 
 
 class HardcodedPlanner(Planner):
@@ -28,10 +29,10 @@ class HardcodedPlanner(Planner):
     ) -> ToolCall | None:
         """Determine the next tool call based on the agent's state.
 
-        The planner follows a sequence of steps:
-        1. If no files have been seen, list all files in the repository.
-        2. If the search hasn't been completed, perform a search based on the question.
-        3. If search results are not available, return None.
+        The planner follows these steps in order:
+        1. If the summary search hasn't been completed, perform it.
+        2. If no files have been seen, list all files in the repository.
+        3. If the text search hasn't been completed, perform it.
         4. If the maximum number of files to read has been reached, return None.
         5. If there are unread files, read the first one.
         6. If no further actions are needed, return None.
@@ -43,83 +44,93 @@ class HardcodedPlanner(Planner):
             The next ToolCall to execute, or None if no further action is needed.
         """
 
-        if not state.summary_search_completed:
+        await self._handle_summary_search(state)
 
-            self.logger.info("Planner: Searching indexed summaries")
-
-            summaries = await self.file_summary_repository.get_all_summaries(
-                state.repo_path
-            )
-
-            state.relevant_summaries = await self.summary_search.search(
-                question=state.question,
-                summaries=summaries,
-            )
-
-            state.summary_search_completed = True
-
-            self.logger.info(
-                f"Planner: Found "
-                f"{len(state.relevant_summaries)} "
-                f"candidate summaries"
-            )
-
-            if state.relevant_summaries:
-                top_score = state.relevant_summaries[0][0]
-                if top_score >= 3:
-                    self.logger.info("Planner: Summary search " "looks good.")
-                    state.findings = state.findings_from_summaries()
-                    return None
-
-        # First, if no files have been seen, list the files in the repository
         if not state.files_seen:
-            self.logger.info("Planner: Looking for all the files in repository")
-            return ToolCall(
-                tool_name="list_files",
-                args={
-                    "repo_path": state.repo_path,
-                },
-            )
+            return self._handle_file_listing(state)
 
-        # If the search hasn't been completed yet, perform a search based on the question
         if not state.search_completed:
-            search_term = extract_search_term(state.question)
-            self.logger.info(
-                f"Planner:  Searching repository for files matching {search_term}."
-            )
-            return ToolCall(
-                tool_name="search_text",
-                args={
-                    "repo_path": state.repo_path,
-                    "search_term": search_term,
-                },
-            )
+            return self._handle_text_search(state)
 
-        # Ensure that search results are available
         if not state.search_results:
             return None
 
-        # If the maximum number of files to read has been reached, return None
         if len(state.files_read) >= MAX_FILES_TO_READ:
             return None
 
-        # Find files that have been searched but not yet read
+        return self._handle_file_reading(state)
+
+    async def _handle_summary_search(self, state: AgentState) -> None:
+        """Handle the summary search step if it hasn't been completed."""
+        if not state.summary_search_completed:
+            self.logger.info("Planner: Searching indexed summaries")
+
+            try:
+                summaries = await self.file_summary_repository.get_all_summaries(
+                    state.repo_path
+                )
+                state.relevant_summaries = await self.summary_search.search(
+                    question=state.question,
+                    summaries=summaries,
+                )
+                state.summary_search_completed = True
+
+                self.logger.info(
+                    f"Planner: Found "
+                    f"{len(state.relevant_summaries)} "
+                    f"candidate summaries"
+                )
+
+                if state.relevant_summaries:
+                    top_score = state.relevant_summaries[0][0]
+                    if top_score >= SUMMARY_SEARCH_THRESHOLD:
+                        self.logger.info("Planner: Summary search looks good.")
+                        state.findings = state.findings_from_summaries()
+                        return None
+            except Exception as e:
+                self.logger.error(f"Error during summary search: {e}")
+                raise
+
+    def _handle_file_listing(self, state: AgentState) -> ToolCall:
+        """Handle the file listing step if no files have been seen."""
+        self.logger.info("Planner: Looking for all the files in repository")
+        return ToolCall(
+            tool_name="list_files",
+            args={
+                "repo_path": state.repo_path,
+            },
+        )
+
+    def _handle_text_search(self, state: AgentState) -> ToolCall:
+        """Handle the text search step if it hasn't been completed."""
+        search_term = extract_search_term(state.question)
+        self.logger.info(
+            f"Planner: Searching repository for files matching {search_term}."
+        )
+        return ToolCall(
+            tool_name="search_text",
+            args={
+                "repo_path": state.repo_path,
+                "search_term": search_term,
+            },
+        )
+
+    def _handle_file_reading(self, state: AgentState) -> ToolCall | None:
+        """Handle the file reading step if there are unread files."""
         unread_files = [
             file for file in state.search_results if file not in state.files_read
         ]
 
-        # If there are unread files, read the first one
-        if unread_files:
-            self.logger.info(
-                f"Planner:  Reading file : {unread_files[0]} out of {len(unread_files)} unread files."
-            )
-            return ToolCall(
-                tool_name="read_file",
-                args={
-                    "repo_path": state.repo_path,
-                    "file_path": unread_files[0],
-                },
-            )
+        if not unread_files:
+            return None
 
-        # No more actions needed
-        return None
+        self.logger.info(
+            f"Planner: Reading file : {unread_files[0]} out of {len(unread_files)} unread files."
+        )
+        return ToolCall(
+            tool_name="read_file",
+            args={
+                "repo_path": state.repo_path,
+                "file_path": unread_files[0],
+            },
+        )
