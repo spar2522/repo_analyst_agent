@@ -78,23 +78,25 @@ async def test_run_step():
 async def test_agent_run():
     """Test the full agent run with a hardcoded planner for deterministic execution."""
 
-    q = QUESTIONS["worker"]
+    q = QUESTIONS["redis"]
 
     logging.info("=" * 60)
     logging.info("Running test for question: %s", q)
     logging.info("=" * 60)
 
-    state = AgentState(question=q)
-    agent = Agent(state)
     planner = HardcodedPlanner()
+    state = AgentState(question=q, repo_path=REPO_PATH)
+
+    agent = Agent(
+        state=state,
+        planner=planner,
+    )
 
     # Execute agent with hardcoded planner
-    result = await agent.run(planner)
-
-    logging.info("Test Agent Run - Result: %s", result)
+    await agent.run()
 
 
-if __name__ == "__main__":
+async def main():
     # Configuration for test execution
     # Set the test to run by changing the value of TEST_NAME
     TEST_NAME = "test_agent_run"
@@ -116,3 +118,7 @@ if __name__ == "__main__":
             logging.error("Test failed with error: %s", e)
     else:
         logging.error("Invalid test name: %s", TEST_NAME)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

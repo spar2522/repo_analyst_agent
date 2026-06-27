@@ -48,7 +48,7 @@ async def main():
     }
 
     # Generate an embedding for the selected test question
-    question_embedding = client.generate_embedding(QUESTIONS["redis"])
+    question_embedding = client.generate_embedding(QUESTIONS["worker"])
 
     # Initialize the embedding search component
     embedding_search = EmbeddingSearch()
