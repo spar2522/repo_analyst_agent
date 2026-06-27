@@ -97,6 +97,10 @@ async def test_agent_run():
 
 
 async def main():
+    """Main function to execute the selected test.
+
+    Sets up test execution by mapping test names to test functions.
+    """
     # Configuration for test execution
     # Set the test to run by changing the value of TEST_NAME
     TEST_NAME = "test_agent_run"
