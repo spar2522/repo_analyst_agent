@@ -1,18 +1,27 @@
 services:
 
-  postgres:
+  repo_analyst_postgres:
     image: postgres:16
-
+    container_name: repo_analyst_postgres
     environment:
+      # PostgreSQL user, password, and database name
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
       POSTGRES_DB: repo_analyst
-
     ports:
+      # Map container port 5432 to host port 5432
       - "5432:5432"
-
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Persist PostgreSQL data in a named volume
+      - repo_analyst_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      # Check if PostgreSQL is ready
+      test: ["CMD", "pg_isready", "-U", "admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  postgres_data:
+  # Volume for PostgreSQL data persistence
+  repo_analyst_postgres_data:
