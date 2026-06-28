@@ -36,25 +36,75 @@ class FileSummarizer:
         try:
             spinner.start()
             prompt = f"""
-You are analysing a source code file.
-
 File:
 {file_path}
 
 Code:
 {content}
 
-Describe:
+You are creating repository knowledge for another AI agent.
 
-- Purpose of this file
-- Main responsibilities
-- Important classes/functions
-- External integrations
-- Architectural role
+Your output will later be embedded and used for semantic retrieval.
 
-Keep the summary repository-specific.
-Do not explain generic programming concepts.
-Do not answer any user question.
+Do NOT write a human-friendly summary.
+
+Instead extract the important technical knowledge.
+
+Return exactly the following sections.
+
+Purpose:
+- What problem does this file solve?
+
+Classes:
+- List important classes.
+
+Functions:
+- List important public functions.
+
+Inputs:
+- What inputs does this file receive?
+
+Outputs:
+- What does this file produce or return?
+
+Dependencies:
+- Important libraries, frameworks or services used.
+
+Collaborates With:
+- Other repository files, modules or components this file directly interacts with.
+
+External Systems:
+- GitHub
+- Redis
+- PostgreSQL
+- Ollama
+- FastAPI
+- Docker
+(only include the ones actually used)
+
+Important Concepts:
+- List important concepts discussed in this file.
+Examples:
+Webhook
+Authentication
+Repository Indexing
+Embeddings
+Background Worker
+Prompt Engineering
+
+Keywords:
+List 10-20 important keywords and identifiers exactly as they appear in the code.
+Include:
+- class names
+- function names
+- constants
+- filenames
+- environment variables
+- API routes
+- important symbols
+
+Architectural Role:
+Describe how this file fits into the overall repository.
 """
             summary = self.llm_client.generate(prompt)
             spinner.stop()

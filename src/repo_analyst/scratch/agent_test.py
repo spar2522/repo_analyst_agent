@@ -78,7 +78,7 @@ async def test_run_step():
 async def test_agent_run():
     """Test the full agent run with a hardcoded planner for deterministic execution."""
 
-    q = QUESTIONS["redis"]
+    q = QUESTIONS["github"]
 
     logging.info("=" * 60)
     logging.info("Running test for question: %s", q)

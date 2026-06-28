@@ -66,7 +66,7 @@ class LLMClient:
             response = requests.post(
                 url,
                 json=payload,
-                timeout=120,
+                timeout=300,
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
