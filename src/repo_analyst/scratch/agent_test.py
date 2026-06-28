@@ -7,7 +7,7 @@ from repo_analyst.tool_call import ToolCall
 import logging
 
 REPO_PATH = "/Users/arpitratan/ai-lab/ai_autodoc"
-QUESTIONS = {
+TEST_QUESTIONS = {
     "webhook": "Why are webhooks used?",
     "redis": "How is Redis used in this repository?",
     "worker": "How are background workers implemented?",
@@ -77,15 +77,14 @@ async def test_run_step():
 
 async def test_agent_run():
     """Test the full agent run with a hardcoded planner for deterministic execution."""
-
-    q = QUESTIONS["github"]
+    test_question = TEST_QUESTIONS["github"]
 
     logging.info("=" * 60)
-    logging.info("Running test for question: %s", q)
+    logging.info("Running test for question: %s", test_question)
     logging.info("=" * 60)
 
     planner = HardcodedPlanner()
-    state = AgentState(question=q, repo_path=REPO_PATH)
+    state = AgentState(question=test_question, repo_path=REPO_PATH)
 
     agent = Agent(
         state=state,
