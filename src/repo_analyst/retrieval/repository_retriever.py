@@ -21,19 +21,15 @@ from repo_analyst.retrieval.hybrid_ranker import HybridRanker
 
 
 class RepositoryRetriever:
+    """A class to retrieve relevant files from a repository based on a question."""
 
     def __init__(self):
-
+        """Initialize the RepositoryRetriever with required components."""
         self.summary_repository = FileSummaryRepository()
-
         self.embedding_repository = FileEmbeddingRepository()
-
         self.summary_search = SummarySearch()
-
         self.embedding_search = EmbeddingSearch()
-
         self.embedding_client = EmbeddingClient()
-
         self.hybrid_ranker = HybridRanker()
 
     async def retrieve(
@@ -41,38 +37,55 @@ class RepositoryRetriever:
         repo_path: str,
         question: str,
     ):
-        summaries = await self.summary_repository.get_all_summaries(repo_path)
-        keyword_results = await self.summary_search.search(
-            question=question,
-            summaries=summaries,
-        )
-        embeddings = await self.embedding_repository.get_all_embeddings(repo_path)
-        question_embedding = self.embedding_client.generate_embedding(question)
-        embedding_results = self.embedding_search.search(
-            question_embedding=question_embedding,
-            embeddings=embeddings,
-        )
+        """Retrieve relevant files from the repository based on the given question.
 
-        print()
+        Args:
+            repo_path: The path to the repository.
+            question: The question to search for.
 
-        print("Keyword Search")
+        Returns:
+            The ranked results from the hybrid ranker.
+        """
+        try:
+            # Fetch summaries from the repository
+            summaries = await self.summary_repository.get_all_summaries(repo_path)
+            if not summaries:
+                print("No summaries found in the repository.")
+                return []
 
-        for score, summary in keyword_results:
+            # Search for relevant summaries
+            keyword_results = await self.summary_search.search(summaries, question)
 
-            print(
-                score,
-                summary.file_path,
-            )
+            # Fetch embeddings from the repository
+            embeddings = await self.embedding_repository.get_all_embeddings(repo_path)
+            if not embeddings:
+                print("No embeddings found in the repository.")
+                return []
 
-        print()
+            # Generate embedding for the question
+            try:
+                question_embedding = await self.embedding_client.generate_embedding(question)
+            except Exception as e:
+                print(f"Failed to generate embedding for the question: {e}")
+                return []
 
-        print("Embedding Search")
+            # Search for relevant embeddings
+            try:
+                embedding_results = await self.embedding_search.search(embeddings, question_embedding)
+            except Exception as e:
+                print(f"Failed to search embeddings: {e}")
+                return []
 
-        for score, embedding in embedding_results:
+            # Combine results using hybrid ranker
+            ranked_results = self.hybrid_ranker.rank(keyword_results, embedding_results, summaries)
 
-            print(
-                f"{score:.3f}",
-                embedding.file_path,
-            )
+            # Output results
+            print("Retrieved results:")
+            for result in ranked_results:
+                print(f"- {result.file_path}")
 
-        return self.hybrid_ranker.rank(keyword_results, embedding_results, summaries)
+            return ranked_results
+
+        except Exception as e:
+            print(f"An error occurred during retrieval: {e}")
+            return []
