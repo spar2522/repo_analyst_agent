@@ -4,10 +4,19 @@ version = "0.1.0"
 description = "Agent for analysing repositories and providing insights."
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "ai-provider",
+    "asyncpg",
+    "sqlalchemy",
+    "requests",
+    "greenlet",
+]
 
-[project.optional-dependencies]
-dev = ["pytest", "typing"]
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -16,3 +25,6 @@ package-dir = {"" = "src"}
 where = ["src"]
 include = ["*"]
 exclude = ["*tests", "*test"]
+
+[tool.uv.sources]
+ai-provider = { path = "../ai_platform/packages/ai-provider", editable = true }

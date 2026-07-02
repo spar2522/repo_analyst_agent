@@ -11,9 +11,8 @@ from repo_analyst.tools.read_file import read_file
 from repo_analyst.llm.file_summariser import (
     FileSummarizer,
 )
-from repo_analyst.llm.llm_client import (
-    LLMClient,
-)
+from ai_provider import AI
+
 from repo_analyst.llm.embeddings_client import (
     EmbeddingClient,
 )
@@ -24,7 +23,7 @@ class RepositoryIndexer:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.file_summary_repository = FileSummaryRepository()
-        self.file_summarizer = FileSummarizer(LLMClient())
+        self.file_summarizer = FileSummarizer(AI())
         self.embedding_client = EmbeddingClient()
         self.file_embedding_repository = FileEmbeddingRepository()
 

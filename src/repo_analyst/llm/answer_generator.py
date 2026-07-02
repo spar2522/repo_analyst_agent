@@ -1,4 +1,4 @@
-from repo_analyst.llm.llm_client import LLMClient
+from ai_provider import AI
 from repo_analyst.logging.spinner import Spinner
 
 
@@ -6,11 +6,11 @@ class AnswerGenerator:
 
     def __init__(
         self,
-        llm_client: LLMClient,
+        ai: AI,
     ):
-        self.llm_client = llm_client
+        self.ai = ai
 
-    def generate(
+    async def generate(
         self,
         question: str,
         findings: list[str],
@@ -43,6 +43,6 @@ Answer:
         spinner = Spinner(f"🧠 Local LLM Finalising answer .....  ")
         spinner.start()
 
-        answer = self.llm_client.generate(prompt)
+        answer = await self.ai.generate(prompt)
         spinner.stop()
         return answer

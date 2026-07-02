@@ -1,17 +1,18 @@
 import logging
 from time import time
 
-from repo_analyst.llm.llm_client import LLMClient
+
 from repo_analyst.logging.spinner import Spinner
+from ai_provider import AI
 
 
 class FileSummarizer:
 
     def __init__(
         self,
-        llm_client: LLMClient,
+        ai: AI,
     ):
-        self.llm_client = llm_client
+        self.ai = ai
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
@@ -106,7 +107,7 @@ Include:
 Architectural Role:
 Describe how this file fits into the overall repository.
 """
-            summary = self.llm_client.generate(prompt)
+            summary = await self.ai.generate(prompt)
             spinner.stop()
             duration = time() - start_time
             self.logger.info(f"✅ Summary completed in {duration:.1f}s")

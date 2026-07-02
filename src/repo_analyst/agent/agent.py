@@ -6,7 +6,7 @@ from repo_analyst.tool_call import ToolCall
 from repo_analyst.tools.tools_registry import TOOLS
 from repo_analyst.tool_result import ToolResult
 from repo_analyst.llm.file_summariser import FileSummarizer
-from repo_analyst.llm.llm_client import LLMClient
+from ai_provider import AI
 from repo_analyst.database.file_summary_repository import (
     FileSummaryRepository,
 )
@@ -32,9 +32,9 @@ class Agent:
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
-        llm_client = LLMClient()
-        self.file_summarizer = FileSummarizer(llm_client)
-        self.answer_generator = AnswerGenerator(llm_client)
+        ai = AI.local()
+        self.file_summarizer = FileSummarizer(ai)
+        self.answer_generator = AnswerGenerator(ai)
 
         self.handlers = {
             "list_files": self._handle_list_files,
@@ -158,7 +158,7 @@ class Agent:
                 break
             await self.run_step(tool_call)
 
-        answer = self.answer_generator.generate(
+        answer = await self.answer_generator.generate(
             question=self.state.question,
             findings=self.state.findings,
         )
