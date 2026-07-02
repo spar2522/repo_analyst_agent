@@ -8,35 +8,7 @@ from ai_provider import AI
 
 class FileSummarizer:
 
-    def __init__(
-        self,
-        ai: AI,
-    ):
-        self.ai = ai
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-
-    async def summarize(
-        self,
-        file_path: str,
-        content: str,
-    ) -> str:
-        """
-        Generate a summary of a source code file using the LLM.
-
-        Args:
-            file_path: Path to the file being summarized.
-            content: Full content of the file to be analyzed.
-
-        Returns:
-            Summary of the file's purpose, responsibilities, and key elements.
-        """
-        start_time = time()
-        spinner = Spinner(f"🧠 Local LLM summarizing file: {file_path}")
-
-        try:
-            spinner.start()
-            prompt = f"""
+    PROMPT_TEMPLATE = """
 File:
 {file_path}
 
@@ -107,6 +79,53 @@ Include:
 Architectural Role:
 Describe how this file fits into the overall repository.
 """
+
+    def __init__(
+        self,
+        ai: AI,
+    ):
+        assert ai is not None, "AI provider must be provided"
+        self.ai = ai
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+
+    async def summarize(
+        self,
+        file_path: str,
+        content: str,
+    ) -> str:
+        """
+        Generate a structured technical summary of a source code file using the AI provider.
+
+        The summary includes technical metadata in specific sections for later semantic retrieval.
+
+        Args:
+            file_path: Path to the file being summarized.
+            content: Full content of the file to be analyzed.
+
+        Returns:
+            Structured summary containing:
+            - Purpose
+            - Classes
+            - Functions
+            - Inputs
+            - Outputs
+            - Dependencies
+            - Collaborations
+            - External systems
+            - Important concepts
+            - Keywords
+            - Architectural role
+
+        Raises:
+            Exception: If summarization fails
+        """
+        start_time = time()
+        spinner = Spinner(f"🧠 Local LLM summarizing file: {file_path}")
+
+        try:
+            spinner.start()
+            prompt = self.PROMPT_TEMPLATE.format(file_path=file_path, content=content)
             summary = await self.ai.generate(prompt)
             spinner.stop()
             duration = time() - start_time
