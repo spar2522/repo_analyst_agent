@@ -92,33 +92,43 @@ class Agent:
         self.state.files_read.add(file_path)
         self.logger.info(f"File Size: {len(tool_result.result)} chars")
 
-        existing_summary = await self.file_summary_repository.get_summary(
-            self.state.repo_path,
-            file_path,
-        )
+        try:
+            existing_summary = await self.file_summary_repository.get_summary(
+                self.state.repo_path,
+                file_path,
+            )
+        except Exception as e:
+            self.logger.error(f"Error fetching summary for {file_path}: {str(e)}")
+            existing_summary = None
 
         if existing_summary:
             self.logger.info(f"⚡ Loaded cached summary: {file_path}")
             summary = existing_summary.summary
-
         else:
-            summary = await self.file_summarizer.summarize(
-                file_path=file_path,
-                content=tool_result.result,
-            )
-            await self.file_summary_repository.save_summary(
-                repo_path=self.state.repo_path,
-                file_path=file_path,
-                summary=summary,
-            )
+            try:
+                summary = await self.file_summarizer.summarize(
+                    file_path=file_path,
+                    content=tool_result.result,
+                )
+                await self.file_summary_repository.save_summary(
+                    repo_path=self.state.repo_path,
+                    file_path=file_path,
+                    summary=summary,
+                )
+            except Exception as e:
+                self.logger.error(f"Error summarizing {file_path}: {str(e)}")
+                summary = ""
 
         self.state.findings.append(summary)
 
-        await self.agent_finding_repository.save_finding(
-            run_id=self.state.run_id,
-            file_path=file_path,
-            finding=summary,
-        )
+        try:
+            await self.agent_finding_repository.save_finding(
+                run_id=self.state.run_id,
+                file_path=file_path,
+                finding=summary,
+            )
+        except Exception as e:
+            self.logger.error(f"Error saving finding for {file_path}: {str(e)}")
 
         self.logger.info("Finding persisted")
         self.state.observations.append(f"Read {file_path}")
@@ -169,31 +179,23 @@ class Agent:
         self.logger.info("FINAL ANSWER")
         self.logger.info("=" * 60)
         self.logger.info(answer)
+        self.logger.info("=" * 60)
 
     async def log_state(self):
-
+        """Log the current state of the agent for debugging purposes."""
         summary = self.state.summary()
-
-        self.logger.info("")
-        self.logger.info("STATE")
+        self.logger.info("Agent State Summary:")
         self.logger.info("-" * 40)
-
         for key, value in summary.items():
-
             self.logger.info(f"{key}: {value}")
-
-        self.logger.info("")
-
+        self.logger.info("-" * 40)
         self.logger.info("Recent Observations:")
-
-        for observation in self.state.observations[-5:]:
-
-            self.logger.info(f"  - {observation}")
-
-        self.logger.info("")
-
+        self.logger.info("-" * 40)
+        for obs in self.state.observations[-5:]:
+            self.logger.info(f"- {obs}")
+        self.logger.info("-" * 40)
         self.logger.info("Recent Findings:")
-
-        for observation in self.state.findings:
-
-            self.logger.info(f"  - {observation}")
+        self.logger.info("-" * 40)
+        for finding in self.state.findings[-5:]:
+            self.logger.info(f"- {finding}")
+        self.logger.info("-" * 40)
